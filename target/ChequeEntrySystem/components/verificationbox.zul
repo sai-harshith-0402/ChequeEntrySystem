@@ -1,0 +1,21 @@
+<zk>
+    <style src="/verificationbox.css"/>
+    <vlayout sclass="verify-container">
+
+        <!-- Title -->
+        <label id="mc_title" sclass="verify-title"/>
+
+        <!-- Input Section -->
+        <hlayout sclass="verify-input-section">
+
+            <vlayout width="100%">
+                <label id="mc_label" sclass="verify-label"/>
+                <textbox id="mc_input" width="100%" sclass="verify-input"/>
+            </vlayout>
+
+            <button id="mc_btn" label="Verify" sclass="verify-btn"/>
+
+        </hlayout>
+
+    </vlayout>
+</zk>

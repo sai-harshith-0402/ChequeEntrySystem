@@ -1,0 +1,37 @@
+.batch-card {
+    background: #f5f6f7;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 20px;
+    width: 500px;
+    justify-content: space-between;
+}
+
+.batch-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.label-title {
+    font-size: 13px;
+    color: #666;
+}
+
+.label-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #000;
+}
+
+.label-status {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.label-status.valid {
+    color: green;
+}
+
+.label-status.invalid {
+    color: red;
+}

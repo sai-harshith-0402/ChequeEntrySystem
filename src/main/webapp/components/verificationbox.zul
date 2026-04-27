@@ -1,5 +1,5 @@
 <zk>
-    <style src="/verificationbox.css"/>
+    <style src="/components/verificationbox.css"/>
     <vlayout sclass="verify-container">
 
         <!-- Title -->
