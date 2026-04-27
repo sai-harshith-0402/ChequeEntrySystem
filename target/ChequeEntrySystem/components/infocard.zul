@@ -1,0 +1,14 @@
+<zk>
+	<style src="/infocard.css"/>
+	<hlayout sclass="batch-card">
+		<vlayout sclass="batch-section">
+			<label value="Batch ID" sclass="label-title"/>
+			<label id="mc_batchId" sclass="label-value"/>
+		</vlayout>
+		
+		<vlayout sclass="batch-section">
+			<label value="Batch Status" sclass="label-title"/>
+			<label value="mc_status" sclass="label-status"/>
+		</vlayout>
+	</hlayout>
+</zk>
