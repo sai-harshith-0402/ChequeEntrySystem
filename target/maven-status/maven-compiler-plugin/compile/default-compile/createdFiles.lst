@@ -8,10 +8,16 @@ com/iispl/dao/BatchDao.class
 com/iispl/controller/BatchProcessingController.class
 com/iispl/service/ChequeServiceImpl.class
 com/iispl/controller/RejectPhaseController.class
+<<<<<<< Updated upstream
 com/iispl/util/Db.class
 com/iispl/dao/BatchDaoImpl.class
 com/iispl/components/DynamicTable.class
 com/iispl/controller/BatchSessionController.class
+=======
+com/iispl/dao/BatchDaoImpl.class
+com/iispl/components/DynamicTable.class
+com/iispl/util/Db.class
+>>>>>>> Stashed changes
 com/iispl/model/Batch.class
 com/iispl/controller/LoginController.class
 com/iispl/model/ChequeDetails.class

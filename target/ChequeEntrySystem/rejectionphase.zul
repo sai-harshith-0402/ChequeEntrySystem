@@ -3,42 +3,7 @@
 <?component name="errorlabel"    class="com.iispl.components.ErrorLabel"    macroURI="/components/errorLabel.zul"?>
 <zk xmlns="http://www.zkoss.org/2005/zul">
 
-<style>
-* { box-sizing: border-box; }
-body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f0f4f8; }
-
-.page-wrap    { max-width: 640px; margin: 0 auto; padding: 28px 20px; }
-.page-banner  { background: #dc2626; border-radius: 12px; padding: 20px 26px;
-                margin-bottom: 22px; }
-.banner-title { font-size: 20px; font-weight: 700; color: #fff; display: block; }
-.banner-sub   { font-size: 13px; color: #fecaca; margin-top: 3px; display: block; }
-
-.card         { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb;
-                box-shadow: 0 2px 8px rgba(0,0,0,.06); overflow: hidden; }
-.card-head    { background: #dc2626; padding: 13px 20px; }
-.card-head-title { font-size: 14px; font-weight: 600; color: #fff; }
-.card-body    { padding: 24px; }
-
-.batch-id-row { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px;
-                padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
-.batch-id-label { font-size: 12px; color: #991b1b; font-weight: 500; }
-.batch-id-value { font-size: 18px; font-weight: 700; color: #dc2626; }
-
-.section-label { font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 8px; display: block; }
-
-.reason-listbox { width: 100%; border: 1.5px solid #d1d5db; border-radius: 8px;
-                  font-size: 13px; }
-
-.action-row   { display: flex; gap: 12px; margin-top: 22px; justify-content: flex-end; }
-
-.verify-btn   { background: #dc2626; color: #fff; border: none; border-radius: 8px;
-                padding: 9px 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
-.verify-btn:hover { background: #b91c1c; }
-.verify-btn.secondary { background: #fff; color: #374151; border: 1.5px solid #d1d5db; }
-.verify-btn.secondary:hover { background: #f9fafb; }
-
-#mc_errorLabel { color: #dc2626; font-size: 12px; margin-top: 8px; display: block; }
-</style>
+<style src="/styling/index.css" />
 
 <window apply="com.iispl.controller.RejectPhaseController"
         border="none" width="100%">
