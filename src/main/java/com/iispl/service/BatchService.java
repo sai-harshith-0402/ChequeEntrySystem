@@ -23,6 +23,9 @@ public interface BatchService {
 
     void saveBatchStatus(String batchId, String status, String reason);
 
+    /** Returns all rows from batch_status table as display-ready maps. */
+    List<Map<String, String>> findAllBatchStatus();
+
     /** Called on new session — removes the session row so batch numbers restart. */
     void clearSession(String sessionId);
 }

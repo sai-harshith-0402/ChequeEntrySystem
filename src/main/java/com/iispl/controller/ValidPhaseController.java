@@ -73,7 +73,7 @@ public class ValidPhaseController extends SelectorComposer<Component> {
         if (!isValid) bpxfLabel.setValue(bpxfXml != null ? "BPXF.xml — Generated ✓" : "BPXF.xml — N/A");
 
         viewBatchesBtn.setLabel("View All Batches");
-        viewBatchesBtn.setOnVerify(e -> Executions.sendRedirect("batchprocessing.zul"));
+        viewBatchesBtn.setOnVerify(e -> Executions.sendRedirect("batchsession.zul"));
 
         newSessionBtn.setLabel("New Session");
         newSessionBtn.setOnVerify(e -> {

@@ -107,6 +107,11 @@ public class BatchServiceImpl implements BatchService {
         dao.saveStatus(batchId, status, reason);
     }
 
+    @Override
+    public List<Map<String, String>> findAllBatchStatus() {
+        return dao.findAllBatchStatus();
+    }
+
     // ── Bug 3 fix: delete session row so next login gets fresh batch numbers ───
     @Override
     public void clearSession(String sessionId) {

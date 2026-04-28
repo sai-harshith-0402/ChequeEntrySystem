@@ -12,9 +12,9 @@ public class Db {
 
     static {
         HikariConfig cfg = new HikariConfig();
-        cfg.setJdbcUrl("jdbc:postgresql://localhost:5432/chequeentrysystem");
+        cfg.setJdbcUrl("jdbc:postgresql://localhost:5432/Bank");
         cfg.setUsername("postgres");
-        cfg.setPassword("password");
+        cfg.setPassword("iispl660");
         cfg.setDriverClassName("org.postgresql.Driver");
 
         // Pool sizing — adjust to your DB server's max_connections
