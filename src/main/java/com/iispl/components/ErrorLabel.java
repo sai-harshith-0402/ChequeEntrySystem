@@ -21,8 +21,6 @@ public class ErrorLabel extends HtmlMacroComponent {
         applyMessage();
     }
 
-    // ── Public API ───────────────────────────────────────────────
-
     public void setMessage(String message) {
         this.message = message;
         applyMessage();
@@ -32,7 +30,9 @@ public class ErrorLabel extends HtmlMacroComponent {
         return message;
     }
 
-    // ── Internal ─────────────────────────────────────────────────
+    public void clear() {
+        setMessage("");
+    }
 
     private void applyMessage() {
         if (mc_errorLabel == null) return;

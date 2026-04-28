@@ -9,6 +9,7 @@ import com.iispl.service.ChequeService;
 import com.iispl.service.ChequeServiceImpl;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.Session;
 import org.zkoss.zk.ui.select.SelectorComposer;
 import org.zkoss.zk.ui.select.annotation.Listen;
 import org.zkoss.zk.ui.select.annotation.Wire;
@@ -24,14 +25,22 @@ public class ChequeVerificationController extends SelectorComposer<Component> {
     private final ChequeService chequeService = new ChequeServiceImpl();
     private final BatchService  batchService  = new BatchServiceImpl();
 
-    // ── Search section ───────────────────────────────────────────
+    /**
+     * Root cause fix:
+     * The cheque number is captured HERE the moment the user clicks "Verify"
+     * and stored as an instance field. onEnterCheque() reads THIS field —
+     * never re-reads getInputValue() — so manual-entry cheques always get
+     * saved with the correct cheque number regardless of what the input
+     * shows when "Enter Cheque" is clicked.
+     */
+    private String verifiedChequeNo = "";
+
     @Wire("#chequeVerifyBox")
     private VerificationBox chequeVerifyBox;
 
     @Wire("#searchError")
     private ErrorLabel searchError;
 
-    // ── Details section (hidden until verified) ──────────────────
     @Wire("#detailsSection")
     private Div detailsSection;
 
@@ -70,16 +79,21 @@ public class ChequeVerificationController extends SelectorComposer<Component> {
             String chequeNo = chequeVerifyBox.getInputValue().trim();
             if (chequeNo.isEmpty()) {
                 searchError.setMessage("Please enter a cheque number.");
+                chequeVerifyBox.resetButton();
                 return;
             }
-            searchError.setMessage("");
+
+            // Capture now — onEnterCheque() uses this, not getInputValue()
+            verifiedChequeNo = chequeNo;
+            searchError.clear();
+            enterError.clear();
 
             String now = LocalDateTime.now()
                     .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
 
             ChequeDetails found = chequeService.findByChequeNumber(chequeNo);
             if (found != null) {
-                // auto-fill, lock fields
+                // Existing cheque — auto-fill and lock all fields
                 txAmountBox.setValue(String.format("%.2f", found.getAmount()));
                 txAmountBox.setReadonly(true);
                 txAccountBox.setValue(found.getAccountNumber());
@@ -88,9 +102,9 @@ public class ChequeVerificationController extends SelectorComposer<Component> {
                 txReceiverBox.setReadonly(true);
                 txMicrBox.setValue(found.getMicrCode());
                 txMicrBox.setReadonly(true);
-                searchError.setMessage("✓ Cheque found — details auto-filled.");
+                searchError.setMessage("Cheque found — details auto-filled.");
             } else {
-                // new cheque — editable
+                // New cheque — clear and open all fields for manual entry
                 txAmountBox.setValue("");   txAmountBox.setReadonly(false);
                 txAccountBox.setValue("");  txAccountBox.setReadonly(false);
                 txReceiverBox.setValue(""); txReceiverBox.setReadonly(false);
@@ -106,29 +120,67 @@ public class ChequeVerificationController extends SelectorComposer<Component> {
 
     @Listen("onClick = #enterChequeBtn")
     public void onEnterCheque() {
-        String chequeNo = chequeVerifyBox.getInputValue().trim();
+        // Use the stored instance field — NOT getInputValue()
+        if (verifiedChequeNo.isEmpty()) {
+            enterError.setMessage("Please verify a cheque number first.");
+            return;
+        }
+
         String amount   = txAmountBox.getValue().trim();
         String accNo    = txAccountBox.getValue().trim();
         String date     = txDateBox.getValue().trim();
         String receiver = txReceiverBox.getValue().trim();
         String micr     = txMicrBox.getValue().trim();
 
-        if (chequeNo.isEmpty() || amount.isEmpty() || accNo.isEmpty()
-                || receiver.isEmpty() || micr.isEmpty()) {
+        // Presence check
+        if (amount.isEmpty() || accNo.isEmpty() || receiver.isEmpty() || micr.isEmpty()) {
             enterError.setMessage("All fields are required.");
             return;
         }
 
-        double amt;
-        try {
-            amt = Double.parseDouble(amount);
-        } catch (NumberFormatException ex) {
-            enterError.setMessage("Amount must be a valid number.");
+        // Amount: digits with optional up to 2 decimal places
+        if (!amount.matches("\\d+(\\.\\d{1,2})?")) {
+            enterError.setMessage("Amount must be a valid number (e.g. 15000 or 15000.50).");
             return;
         }
 
-        ChequeDetails cd = new ChequeDetails(chequeNo, amt, accNo, date, receiver, micr);
-        batchService.addToBatch(cd);
+        double amt = Double.parseDouble(amount);
+        if (amt <= 0) {
+            enterError.setMessage("Amount must be greater than zero.");
+            return;
+        }
+
+        // Account number: digits only, 8-20 characters
+        if (!accNo.matches("\\d{8,20}")) {
+            enterError.setMessage("Account number must contain digits only (8–20 digits).");
+            return;
+        }
+
+        // Receiver name: letters and spaces only
+        if (!receiver.matches("[a-zA-Z ]+")) {
+            enterError.setMessage("Receiver name must contain letters only.");
+            return;
+        }
+
+        // MICR code: exactly 9 digits
+        if (!micr.matches("\\d{9}")) {
+            enterError.setMessage("MICR code must be exactly 9 digits.");
+            return;
+        }
+
+        enterError.clear();
+
+        ChequeDetails cd = new ChequeDetails(verifiedChequeNo, amt, accNo, date, receiver, micr);
+
+        Session session  = Executions.getCurrent().getDesktop().getSession();
+        String sessionId = (String) session.getAttribute("sessionId");
+
+        String error = batchService.addToBatch(cd, sessionId);
+        if (error != null) {
+            enterError.setMessage(error);
+            return;
+        }
+
         Executions.sendRedirect("batchprocessing.zul");
     }
 }
