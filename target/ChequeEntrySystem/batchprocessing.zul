@@ -80,6 +80,7 @@ body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f0f4f8; }
 
             <div sclass="action-row">
                 <dynamicbutton id="addMoreBtn"/>
+                <dynamicbutton id="viewSessionBtn"/>
                 <dynamicbutton id="generateBtn"/>
             </div>
         </div>

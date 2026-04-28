@@ -187,6 +187,30 @@ public class BatchDaoImpl implements BatchDao {
     }
 
     @Override
+    public List<Map<String, String>> findAllBatchStatus() {
+        List<Map<String, String>> rows = new ArrayList<>();
+        String sql = "SELECT batch_id, status, rejection_reason, processed_at " +
+                     "FROM batch_status ORDER BY processed_at DESC";
+        try (Connection con = Db.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Map<String, String> row = new java.util.LinkedHashMap<>();
+                row.put("Batch ID",         rs.getString("batch_id"));
+                row.put("Status",           rs.getString("status"));
+                String reason = rs.getString("rejection_reason");
+                row.put("Rejection Reason", reason != null ? reason : "-");
+                Object processedAt = rs.getObject("processed_at");
+                row.put("Processed At",     processedAt != null ? processedAt.toString() : "-");
+                rows.add(row);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("DB error fetching batch_status table", e);
+        }
+        return rows;
+    }
+
+    @Override
     public void deleteSession(String sessionId) {
         String sql = "DELETE FROM batch_session WHERE session_id = ?";
         try (Connection con = Db.getConnection();
@@ -196,6 +220,33 @@ public class BatchDaoImpl implements BatchDao {
         } catch (SQLException e) {
             throw new RuntimeException("DB error deleting session", e);
         }
+    }
+
+    @Override
+    public List<Map<String, String>> findAllSessions() {
+        List<Map<String, String>> rows = new ArrayList<>();
+        // cheque_count is the total cheques saved; derive batches = ceil(count/5)
+        String sql = "SELECT session_id, cheque_count FROM batch_session ORDER BY session_id";
+        try (Connection con = Db.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Map<String, String> row = new java.util.LinkedHashMap<>();
+                String sessionId  = rs.getString("session_id");
+                int    count      = rs.getInt("cheque_count");
+                int    batches    = (int) Math.ceil(count / 5.0);
+                // Shorten UUID for display — show first 8 chars
+                String shortId = sessionId.length() > 8
+                    ? sessionId.substring(0, 8) + "..." : sessionId;
+                row.put("Session ID",      shortId);
+                row.put("Cheque Count",    String.valueOf(count));
+                row.put("Batches Assigned", String.valueOf(Math.max(batches, 0)));
+                rows.add(row);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("DB error fetching all sessions", e);
+        }
+        return rows;
     }
 
     private Batch map(ResultSet rs) throws SQLException {
