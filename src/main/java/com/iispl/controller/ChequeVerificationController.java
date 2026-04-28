@@ -26,14 +26,12 @@ public class ChequeVerificationController extends SelectorComposer<Component> {
     private final BatchService  batchService  = new BatchServiceImpl();
 
     /**
-     * Root cause fix:
-     * The cheque number is captured HERE the moment the user clicks "Verify"
-     * and stored as an instance field. onEnterCheque() reads THIS field —
-     * never re-reads getInputValue() — so manual-entry cheques always get
-     * saved with the correct cheque number regardless of what the input
-     * shows when "Enter Cheque" is clicked.
+     * Tracks whether the verified cheque was found in the cheques master table.
+     * - true  → cheque already exists; do NOT insert again into cheques table.
+     * - false → new cheque entered manually; MUST insert into cheques table first.
      */
-    private String verifiedChequeNo = "";
+    private String  verifiedChequeNo    = "";
+    private boolean chequeAlreadyExists = false;
 
     @Wire("#chequeVerifyBox")
     private VerificationBox chequeVerifyBox;
@@ -83,7 +81,6 @@ public class ChequeVerificationController extends SelectorComposer<Component> {
                 return;
             }
 
-            // Capture now — onEnterCheque() uses this, not getInputValue()
             verifiedChequeNo = chequeNo;
             searchError.clear();
             enterError.clear();
@@ -91,9 +88,18 @@ public class ChequeVerificationController extends SelectorComposer<Component> {
             String now = LocalDateTime.now()
                     .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
 
-            ChequeDetails found = chequeService.findByChequeNumber(chequeNo);
+            ChequeDetails found;
+            try {
+                found = chequeService.findByChequeNumber(chequeNo);
+            } catch (RuntimeException ex) {
+                searchError.setMessage("Database error during lookup: " + ex.getMessage());
+                chequeVerifyBox.resetButton();
+                return;
+            }
+
             if (found != null) {
-                // Existing cheque — auto-fill and lock all fields
+                // Existing cheque — auto-fill, lock fields, flag as existing
+                chequeAlreadyExists = true;
                 txAmountBox.setValue(String.format("%.2f", found.getAmount()));
                 txAmountBox.setReadonly(true);
                 txAccountBox.setValue(found.getAccountNumber());
@@ -104,13 +110,15 @@ public class ChequeVerificationController extends SelectorComposer<Component> {
                 txMicrBox.setReadonly(true);
                 searchError.setMessage("Cheque found — details auto-filled.");
             } else {
-                // New cheque — clear and open all fields for manual entry
+                // New cheque — clear fields, open for manual entry, flag as new
+                chequeAlreadyExists = false;
                 txAmountBox.setValue("");   txAmountBox.setReadonly(false);
                 txAccountBox.setValue("");  txAccountBox.setReadonly(false);
                 txReceiverBox.setValue(""); txReceiverBox.setReadonly(false);
                 txMicrBox.setValue("");     txMicrBox.setReadonly(false);
                 searchError.setMessage("New cheque — enter details manually.");
             }
+
             txDateBox.setValue(now);
             txDateBox.setReadonly(true);
             detailsSection.setVisible(true);
@@ -120,9 +128,17 @@ public class ChequeVerificationController extends SelectorComposer<Component> {
 
     @Listen("onClick = #enterChequeBtn")
     public void onEnterCheque() {
-        // Use the stored instance field — NOT getInputValue()
         if (verifiedChequeNo.isEmpty()) {
             enterError.setMessage("Please verify a cheque number first.");
+            return;
+        }
+
+        // Guard against expired session or direct URL access
+        Session session  = Executions.getCurrent().getDesktop().getSession();
+        String sessionId = (String) session.getAttribute("sessionId");
+        if (sessionId == null) {
+            enterError.setMessage("Your session has expired. Please log in again.");
+            Executions.sendRedirect("login.zul");
             return;
         }
 
@@ -150,15 +166,15 @@ public class ChequeVerificationController extends SelectorComposer<Component> {
             return;
         }
 
-        // Account number: digits only, 8-20 characters
+        // Account number: digits only, 8–20 characters
         if (!accNo.matches("\\d{8,20}")) {
             enterError.setMessage("Account number must contain digits only (8–20 digits).");
             return;
         }
 
-        // Receiver name: letters and spaces only
-        if (!receiver.matches("[a-zA-Z ]+")) {
-            enterError.setMessage("Receiver name must contain letters only.");
+        // Receiver name: letters, spaces, dots, hyphens, apostrophes
+        if (!receiver.matches("[a-zA-Z .\\-']+")) {
+            enterError.setMessage("Receiver name must contain letters, spaces, dots, hyphens, or apostrophes only.");
             return;
         }
 
@@ -172,12 +188,24 @@ public class ChequeVerificationController extends SelectorComposer<Component> {
 
         ChequeDetails cd = new ChequeDetails(verifiedChequeNo, amt, accNo, date, receiver, micr);
 
-        Session session  = Executions.getCurrent().getDesktop().getSession();
-        String sessionId = (String) session.getAttribute("sessionId");
+        try {
+            // ── KEY FIX ──────────────────────────────────────────────────────
+            // If this is a manually entered cheque (not found in cheques table),
+            // insert it into the cheques master table BEFORE saving to batches.
+            // Without this step, the cheques table never gets the manual entry.
+            if (!chequeAlreadyExists) {
+                chequeService.saveCheque(cd);
+            }
 
-        String error = batchService.addToBatch(cd, sessionId);
-        if (error != null) {
-            enterError.setMessage(error);
+            // Now save to batches (duplicate guard is inside addToBatch)
+            String error = batchService.addToBatch(cd, sessionId);
+            if (error != null) {
+                enterError.setMessage(error);
+                return;
+            }
+
+        } catch (RuntimeException ex) {
+            enterError.setMessage("Database error while saving cheque: " + ex.getMessage());
             return;
         }
 
