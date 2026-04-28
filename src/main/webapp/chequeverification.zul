@@ -3,42 +3,7 @@
 <?component name="errorlabel"      class="com.iispl.components.ErrorLabel"      macroURI="/components/errorLabel.zul"?>
 <zk xmlns="http://www.zkoss.org/2005/zul">
 
-<style>
-* { box-sizing: border-box; }
-body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f0f4f8; }
-
-.page-wrap    { max-width: 860px; margin: 0 auto; padding: 28px 20px; }
-
-/* page header banner */
-.page-banner  { background: #1a56db; border-radius: 12px; padding: 20px 26px;
-                margin-bottom: 22px; }
-.banner-title { font-size: 20px; font-weight: 700; color: #fff; display: block; }
-.banner-sub   { font-size: 13px; color: #bfdbfe; margin-top: 3px; display: block; }
-
-/* cards */
-.card         { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb;
-                box-shadow: 0 2px 8px rgba(0,0,0,.06); margin-bottom: 20px; overflow: hidden; }
-.card-head    { background: #1a56db; padding: 13px 20px; }
-.card-head-title { font-size: 14px; font-weight: 600; color: #fff; }
-.card-body    { padding: 20px; }
-
-/* details form grid */
-.form-grid    { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; }
-.field-group  { display: flex; flex-direction: column; gap: 5px; }
-.field-label  { font-size: 12px; font-weight: 500; color: #374151; }
-.field-input  { border: 1.5px solid #d1d5db; border-radius: 8px; padding: 8px 11px;
-                font-size: 13px; outline: none; }
-.field-input:focus { border-color: #1a56db; }
-.field-input[readonly] { background: #f9fafb; color: #6b7280; }
-
-.btn-row      { display: flex; justify-content: flex-end; margin-top: 18px; }
-.btn-primary  { background: #1a56db; color: #fff; border: none; border-radius: 8px;
-                padding: 9px 22px; font-size: 13px; font-weight: 600; cursor: pointer; }
-.btn-primary:hover { background: #1e40af; }
-
-/* verificationbox overrides already in verificationbox.css */
-#mc_errorLabel { color: #dc2626; font-size: 12px; margin-top: 6px; display: block; }
-</style>
+<style src="/styling/chequeverification.css"/>
 
 <window apply="com.iispl.controller.ChequeVerificationController"
         border="none" width="100%">

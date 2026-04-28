@@ -1,0 +1,22 @@
+@charset "UTF-8";
+* { box-sizing: border-box; }
+body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f0f4f8; }
+
+.page-wrap     { max-width: 1000px; margin: 0 auto; padding: 28px 20px; }
+.page-banner   { background: #1a56db; border-radius: 12px; padding: 20px 26px;
+                 margin-bottom: 22px; }
+.banner-title  { font-size: 20px; font-weight: 700; color: #fff; display: block; }
+.banner-sub    { font-size: 13px; color: #bfdbfe; margin-top: 3px; display: block; }
+
+.card          { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb;
+                 box-shadow: 0 2px 8px rgba(0,0,0,.06); overflow: hidden; }
+.card-head     { background: #1a56db; padding: 13px 20px; }
+.card-head-title { font-size: 14px; font-weight: 600; color: #fff; }
+
+.action-row    { display: flex; gap: 12px; padding: 16px 20px;
+                 border-top: 1px solid #e5e7eb; background: #f9fafb; }
+.verify-btn    { background: #1a56db; color: #fff; border: none; border-radius: 8px;
+                 padding: 9px 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.verify-btn:hover { background: #1e40af; }
+.verify-btn.secondary { background: #fff; color: #1a56db; border: 1.5px solid #1a56db; }
+.verify-btn.secondary:hover { background: #eff6ff; }
