@@ -3,7 +3,47 @@
 <?component name="dynamicbutton" class="com.iispl.components.DynamicButton" macroURI="/components/dynamicbutton.zul"?>
 <zk xmlns="http://www.zkoss.org/2005/zul">
 
-<style src="/styling/index.css" />
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f0f4f8; }
+
+.page-wrap    { max-width: 720px; margin: 0 auto; padding: 28px 20px; }
+.page-banner  { background: #1a56db; border-radius: 12px; padding: 20px 26px;
+                margin-bottom: 22px; }
+.banner-title { font-size: 20px; font-weight: 700; color: #fff; display: block; }
+.banner-sub   { font-size: 13px; color: #bfdbfe; margin-top: 3px; display: block; }
+
+.card         { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb;
+                box-shadow: 0 2px 8px rgba(0,0,0,.06); overflow: hidden; margin-bottom: 18px; }
+.card-head    { background: #1a56db; padding: 13px 20px; }
+.card-head-title { font-size: 14px; font-weight: 600; color: #fff; }
+.card-body    { padding: 22px; }
+
+/* InfoCard is already styled via infocard.css */
+
+.reason-box   { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px;
+                padding: 12px 16px; margin-top: 16px; }
+.reason-label { font-size: 12px; color: #991b1b; font-weight: 500; display: block; }
+.reason-value { font-size: 14px; color: #dc2626; font-weight: 600; margin-top: 3px; display: block; }
+
+/* Generated files section */
+.files-card   { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px;
+                padding: 16px 20px; }
+.file-row     { display: flex; align-items: center; gap: 10px; padding: 6px 0;
+                border-bottom: 1px solid #d1fae5; }
+.file-row:last-child { border-bottom: none; }
+.file-icon    { font-size: 18px; }
+.file-name-label { font-size: 13px; color: #166534; font-weight: 500; }
+
+.action-row   { display: flex; gap: 12px; margin-top: 8px; justify-content: center; }
+.verify-btn   { background: #1a56db; color: #fff; border: none; border-radius: 8px;
+                padding: 9px 22px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.verify-btn:hover { background: #1e40af; }
+.verify-btn.secondary { background: #fff; color: #1a56db; border: 1.5px solid #1a56db; }
+.verify-btn.secondary:hover { background: #eff6ff; }
+
+/* InfoCard status colours already in infocard.css */
+</style>
 
 <window apply="com.iispl.controller.ValidPhaseController"
         border="none" width="100%">
