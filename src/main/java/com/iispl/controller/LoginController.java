@@ -6,9 +6,12 @@ import com.iispl.service.ChequeService;
 import com.iispl.service.ChequeServiceImpl;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.Session;
 import org.zkoss.zk.ui.select.SelectorComposer;
 import org.zkoss.zk.ui.select.annotation.Wire;
 import org.zkoss.zul.Textbox;
+
+import java.util.UUID;
 
 public class LoginController extends SelectorComposer<Component> {
 
@@ -41,6 +44,10 @@ public class LoginController extends SelectorComposer<Component> {
             }
 
             if (chequeService.validateLogin(username, password)) {
+                // ── Bug 3 fix: generate a unique session ID on every login ────
+                // This ensures each session gets its own batch number sequence
+                Session session = Executions.getCurrent().getDesktop().getSession();
+                session.setAttribute("sessionId", UUID.randomUUID().toString());
                 Executions.sendRedirect("chequeverification.zul");
             } else {
                 loginError.setMessage("Invalid username or password.");

@@ -1,5 +1,5 @@
 <zk>
-	<style src="/infocard.css"/>
+	<style src="/components/infocard.css"/>
 	<hlayout sclass="batch-card">
 		<vlayout sclass="batch-section">
 			<label value="Batch ID" sclass="label-title"/>
@@ -8,7 +8,7 @@
 		
 		<vlayout sclass="batch-section">
 			<label value="Batch Status" sclass="label-title"/>
-			<label value="mc_status" sclass="label-status"/>
+			<label id="mc_status" sclass="label-status"/>
 		</vlayout>
 	</hlayout>
 </zk>

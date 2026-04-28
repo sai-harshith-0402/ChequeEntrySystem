@@ -11,16 +11,19 @@ import java.util.*;
 
 public class BatchServiceImpl implements BatchService {
 
-    private static final int BATCH_SIZE = 5;
     private final BatchDao dao = new BatchDaoImpl();
 
+    // ── Bug 2 fix: check duplicate before saving ───────────────────────────────
+    // ── Bug 3 fix: use sessionId to assign batch ID ───────────────────────────
     @Override
-    public String addToBatch(ChequeDetails cd) {
-        int total       = dao.countAll();
-        int batchNumber = (total / BATCH_SIZE) + 1;
-        String batchId  = String.format("BATCH%03d", batchNumber);
+    public String addToBatch(ChequeDetails cd, String sessionId) {
+        // Duplicate guard
+        if (dao.existsByChequeNumber(cd.getChequeNumber())) {
+            return "Cheque " + cd.getChequeNumber() + " has already been entered in a batch.";
+        }
+        String batchId = dao.assignBatchId(sessionId);
         dao.save(new Batch(batchId, cd));
-        return batchId;
+        return null; // null = success
     }
 
     @Override
@@ -30,20 +33,17 @@ public class BatchServiceImpl implements BatchService {
     public List<Batch> getBatchById(String batchId) { return dao.findByBatchId(batchId); }
 
     @Override
-    public int getTotalCount() { return dao.countAll(); }
-
-    @Override
     public List<Map<String, String>> toBatchTableRows(List<Batch> batches, boolean includeBatchId) {
         List<Map<String, String>> rows = new ArrayList<>();
         for (Batch b : batches) {
             Map<String, String> row = new LinkedHashMap<>();
-            if (includeBatchId) row.put("Batch ID", b.getBatchId());
-            row.put("Cheque No.",     b.getChequeNumber());
-            row.put("Amount (₹)",     String.format("%.2f", b.getAmount()));
-            row.put("Account No.",    b.getAccountNumber());
-            row.put("Date",           b.getPresentDate());
-            row.put("Receiver Name",  b.getReceiverName());
-            row.put("MICR Code",      b.getMicrCode());
+            if (includeBatchId) row.put("Batch ID",      b.getBatchId());
+            row.put("Cheque No.",    b.getChequeNumber());
+            row.put("Amount (₹)",    String.format("%.2f", b.getAmount()));
+            row.put("Account No.",   b.getAccountNumber());
+            row.put("Date",          b.getPresentDate());
+            row.put("Receiver Name", b.getReceiverName());
+            row.put("MICR Code",     b.getMicrCode());
             rows.add(row);
         }
         return rows;
@@ -58,8 +58,8 @@ public class BatchServiceImpl implements BatchService {
 
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CXF>\n");
-        sb.append("  <Header><DateTime>").append(now).append("</DateTime>");
-        sb.append("<TotalBatches>").append(grouped.size()).append("</TotalBatches></Header>\n");
+        sb.append("  <Header><DateTime>").append(now).append("</DateTime>")
+          .append("<TotalBatches>").append(grouped.size()).append("</TotalBatches></Header>\n");
         sb.append("  <Batches>\n");
         for (Map.Entry<String, List<Batch>> e : grouped.entrySet()) {
             sb.append("    <Batch id=\"").append(e.getKey()).append("\">\n");
@@ -105,5 +105,11 @@ public class BatchServiceImpl implements BatchService {
     @Override
     public void saveBatchStatus(String batchId, String status, String reason) {
         dao.saveStatus(batchId, status, reason);
+    }
+
+    // ── Bug 3 fix: delete session row so next login gets fresh batch numbers ───
+    @Override
+    public void clearSession(String sessionId) {
+        if (sessionId != null) dao.deleteSession(sessionId);
     }
 }

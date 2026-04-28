@@ -1,0 +1,14 @@
+/* ── ErrorLabel component styles ── */
+
+.error-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: #dc2626;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    padding: 7px 12px;
+    margin-top: 20px;
+    line-height: 1.5;
+}

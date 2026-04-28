@@ -32,13 +32,36 @@ public class ChequeDaoImpl implements ChequeDao {
         return null;
     }
 
+    /**
+     * Inserts a manually entered cheque into the cheques master table.
+     * This is what was missing — without this, manual cheques never
+     * appear in the cheques table even though they land in batches.
+     */
+    @Override
+    public void insertCheque(ChequeDetails cheque) {
+        String sql = "INSERT INTO cheques " +
+                     "(cheque_number, amount, account_number, receiver_name, micr_code) " +
+                     "VALUES (?, ?, ?, ?, ?)";
+        try (Connection con = Db.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, cheque.getChequeNumber());
+            ps.setDouble(2, cheque.getAmount());
+            ps.setString(3, cheque.getAccountNumber());
+            ps.setString(4, cheque.getReceiverName());
+            ps.setString(5, cheque.getMicrCode());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("DB error inserting cheque: " + cheque.getChequeNumber(), e);
+        }
+    }
+
     @Override
     public boolean validateLogin(String username, String password) {
         String sql = "SELECT 1 FROM cts_users WHERE username = ? AND password_hash = ?";
         try (Connection con = Db.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, username);
-            ps.setString(2, password);          // compare BCrypt hash in production
+            ps.setString(2, password);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }

@@ -6,14 +6,15 @@ import java.util.List;
 import java.util.Map;
 
 public interface BatchService {
-    /** Assigns a batch ID and persists the cheque. Returns the assigned batchId. */
-    String addToBatch(ChequeDetails cd);
+    /**
+     * Validates, assigns a batch ID and persists the cheque.
+     * Returns an error message string if the cheque is a duplicate, or null on success.
+     */
+    String addToBatch(ChequeDetails cd, String sessionId);
 
     List<Batch> getAllBatches();
     List<Batch> getBatchById(String batchId);
-    int getTotalCount();
 
-    /** Returns List<Map<header, value>> rows — ready for DynamicTable. */
     List<Map<String, String>> toBatchTableRows(List<Batch> batches, boolean includeBatchId);
 
     String generateCxfXml(List<Batch> batches);
@@ -21,4 +22,7 @@ public interface BatchService {
     String generateBpxfXml(String batchId, String reason);
 
     void saveBatchStatus(String batchId, String status, String reason);
+
+    /** Called on new session — removes the session row so batch numbers restart. */
+    void clearSession(String sessionId);
 }

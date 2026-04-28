@@ -9,6 +9,7 @@ import com.iispl.service.ChequeService;
 import com.iispl.service.ChequeServiceImpl;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.Session;
 import org.zkoss.zk.ui.select.SelectorComposer;
 import org.zkoss.zk.ui.select.annotation.Listen;
 import org.zkoss.zk.ui.select.annotation.Wire;
@@ -24,14 +25,20 @@ public class ChequeVerificationController extends SelectorComposer<Component> {
     private final ChequeService chequeService = new ChequeServiceImpl();
     private final BatchService  batchService  = new BatchServiceImpl();
 
-    // ── Search section ───────────────────────────────────────────
+    /**
+     * Tracks whether the verified cheque was found in the cheques master table.
+     * - true  → cheque already exists; do NOT insert again into cheques table.
+     * - false → new cheque entered manually; MUST insert into cheques table first.
+     */
+    private String  verifiedChequeNo    = "";
+    private boolean chequeAlreadyExists = false;
+
     @Wire("#chequeVerifyBox")
     private VerificationBox chequeVerifyBox;
 
     @Wire("#searchError")
     private ErrorLabel searchError;
 
-    // ── Details section (hidden until verified) ──────────────────
     @Wire("#detailsSection")
     private Div detailsSection;
 
@@ -70,16 +77,29 @@ public class ChequeVerificationController extends SelectorComposer<Component> {
             String chequeNo = chequeVerifyBox.getInputValue().trim();
             if (chequeNo.isEmpty()) {
                 searchError.setMessage("Please enter a cheque number.");
+                chequeVerifyBox.resetButton();
                 return;
             }
-            searchError.setMessage("");
+
+            verifiedChequeNo = chequeNo;
+            searchError.clear();
+            enterError.clear();
 
             String now = LocalDateTime.now()
                     .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
 
-            ChequeDetails found = chequeService.findByChequeNumber(chequeNo);
+            ChequeDetails found;
+            try {
+                found = chequeService.findByChequeNumber(chequeNo);
+            } catch (RuntimeException ex) {
+                searchError.setMessage("Database error during lookup: " + ex.getMessage());
+                chequeVerifyBox.resetButton();
+                return;
+            }
+
             if (found != null) {
-                // auto-fill, lock fields
+                // Existing cheque — auto-fill, lock fields, flag as existing
+                chequeAlreadyExists = true;
                 txAmountBox.setValue(String.format("%.2f", found.getAmount()));
                 txAmountBox.setReadonly(true);
                 txAccountBox.setValue(found.getAccountNumber());
@@ -88,15 +108,17 @@ public class ChequeVerificationController extends SelectorComposer<Component> {
                 txReceiverBox.setReadonly(true);
                 txMicrBox.setValue(found.getMicrCode());
                 txMicrBox.setReadonly(true);
-                searchError.setMessage("✓ Cheque found — details auto-filled.");
+                searchError.setMessage("Cheque found — details auto-filled.");
             } else {
-                // new cheque — editable
+                // New cheque — clear fields, open for manual entry, flag as new
+                chequeAlreadyExists = false;
                 txAmountBox.setValue("");   txAmountBox.setReadonly(false);
                 txAccountBox.setValue("");  txAccountBox.setReadonly(false);
                 txReceiverBox.setValue(""); txReceiverBox.setReadonly(false);
                 txMicrBox.setValue("");     txMicrBox.setReadonly(false);
                 searchError.setMessage("New cheque — enter details manually.");
             }
+
             txDateBox.setValue(now);
             txDateBox.setReadonly(true);
             detailsSection.setVisible(true);
@@ -106,29 +128,87 @@ public class ChequeVerificationController extends SelectorComposer<Component> {
 
     @Listen("onClick = #enterChequeBtn")
     public void onEnterCheque() {
-        String chequeNo = chequeVerifyBox.getInputValue().trim();
+        if (verifiedChequeNo.isEmpty()) {
+            enterError.setMessage("Please verify a cheque number first.");
+            return;
+        }
+
+        // Guard against expired session or direct URL access
+        Session session  = Executions.getCurrent().getDesktop().getSession();
+        String sessionId = (String) session.getAttribute("sessionId");
+        if (sessionId == null) {
+            enterError.setMessage("Your session has expired. Please log in again.");
+            Executions.sendRedirect("login.zul");
+            return;
+        }
+
         String amount   = txAmountBox.getValue().trim();
         String accNo    = txAccountBox.getValue().trim();
         String date     = txDateBox.getValue().trim();
         String receiver = txReceiverBox.getValue().trim();
         String micr     = txMicrBox.getValue().trim();
 
-        if (chequeNo.isEmpty() || amount.isEmpty() || accNo.isEmpty()
-                || receiver.isEmpty() || micr.isEmpty()) {
+        // Presence check
+        if (amount.isEmpty() || accNo.isEmpty() || receiver.isEmpty() || micr.isEmpty()) {
             enterError.setMessage("All fields are required.");
             return;
         }
 
-        double amt;
-        try {
-            amt = Double.parseDouble(amount);
-        } catch (NumberFormatException ex) {
-            enterError.setMessage("Amount must be a valid number.");
+        // Amount: digits with optional up to 2 decimal places
+        if (!amount.matches("\\d+(\\.\\d{1,2})?")) {
+            enterError.setMessage("Amount must be a valid number (e.g. 15000 or 15000.50).");
             return;
         }
 
-        ChequeDetails cd = new ChequeDetails(chequeNo, amt, accNo, date, receiver, micr);
-        batchService.addToBatch(cd);
+        double amt = Double.parseDouble(amount);
+        if (amt <= 0) {
+            enterError.setMessage("Amount must be greater than zero.");
+            return;
+        }
+
+        // Account number: digits only, 8–20 characters
+        if (!accNo.matches("\\d{8,20}")) {
+            enterError.setMessage("Account number must contain digits only (8–20 digits).");
+            return;
+        }
+
+        // Receiver name: letters, spaces, dots, hyphens, apostrophes
+        if (!receiver.matches("[a-zA-Z .\\-']+")) {
+            enterError.setMessage("Receiver name must contain letters, spaces, dots, hyphens, or apostrophes only.");
+            return;
+        }
+
+        // MICR code: exactly 9 digits
+        if (!micr.matches("\\d{9}")) {
+            enterError.setMessage("MICR code must be exactly 9 digits.");
+            return;
+        }
+
+        enterError.clear();
+
+        ChequeDetails cd = new ChequeDetails(verifiedChequeNo, amt, accNo, date, receiver, micr);
+
+        try {
+            // ── KEY FIX ──────────────────────────────────────────────────────
+            // If this is a manually entered cheque (not found in cheques table),
+            // insert it into the cheques master table BEFORE saving to batches.
+            // Without this step, the cheques table never gets the manual entry.
+            if (!chequeAlreadyExists) {
+                chequeService.saveCheque(cd);
+            }
+
+            // Now save to batches (duplicate guard is inside addToBatch)
+            String error = batchService.addToBatch(cd, sessionId);
+            if (error != null) {
+                enterError.setMessage(error);
+                return;
+            }
+
+        } catch (RuntimeException ex) {
+            enterError.setMessage("Database error while saving cheque: " + ex.getMessage());
+            return;
+        }
+
         Executions.sendRedirect("batchprocessing.zul");
     }
 }

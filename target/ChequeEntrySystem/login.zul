@@ -124,7 +124,7 @@ body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f0f4f8; }
                              placeholder="Enter password" width="100%"/>
                 </div>
 
-                <dynamicbutton id="loginBtn"/>
+                <dynamicbutton id="loginBtn" style="width:160px"/>
 
             </div>
         </div>
